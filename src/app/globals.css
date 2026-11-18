@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #17141f;
+  --color-ink-soft: #5d5a68;
+  --color-paper: #fbfaf6;
+  --color-line: #e6e3da;
+  --color-royal: #4a2fe0;
+  --color-royal-dark: #3720b4;
+  --color-royal-tint: #efecff;
+  --color-crown: #f2b31b;
+  --color-crown-tint: #fff5d6;
+  --color-good: #0b8a5c;
+  --color-bad: #c2362b;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition-colors cursor-pointer;
+  }
+  .btn-primary {
+    @apply bg-royal text-white hover:bg-royal-dark;
+  }
+  .btn-ghost {
+    @apply border border-line bg-white text-ink hover:border-ink;
+  }
+  .btn-danger {
+    @apply border border-line bg-white text-bad hover:border-bad;
+  }
+  .field {
+    @apply w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-royal focus:ring-2 focus:ring-royal/20;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-ink;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-white;
+  }
+  .wrap {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
