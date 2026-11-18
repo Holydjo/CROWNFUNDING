@@ -74,17 +74,11 @@ export function getProjectById(id: number): Project | undefined {
   return one<Project>(`${BASE} WHERE p.id = ?`, id);
 }
 
-export const SORTS = {
-  magic: "Magic",
-  popularity: "Popularity",
-  newest: "Newest",
-  end_date: "End date",
-  most_funded: "Most funded",
-} as const;
-export type Sort = keyof typeof SORTS;
+export const SORTS = ["magic", "popularity", "newest", "end_date", "most_funded"] as const;
+export type Sort = (typeof SORTS)[number];
 
-export const STATES = { live: "Live", successful: "Successful", all: "All" } as const;
-export type StateFilter = keyof typeof STATES;
+export const STATES = ["live", "successful", "all"] as const;
+export type StateFilter = (typeof STATES)[number];
 
 export const PAGE_SIZE = 12;
 

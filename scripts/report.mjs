@@ -69,10 +69,12 @@ class Actor {
   constructor(name) {
     this.name = name;
     this.jar = new Map();
+    /** Headers sent on every request, e.g. accept-language. */
+    this.always = {};
   }
   #headers(extra = {}) {
     const cookie = [...this.jar].map(([k, v]) => `${k}=${v}`).join("; ");
-    return { ...(cookie ? { cookie } : {}), ...extra };
+    return { ...this.always, ...(cookie ? { cookie } : {}), ...extra };
   }
   #store(res) {
     for (const c of res.headers.getSetCookie()) {
@@ -481,6 +483,62 @@ async function run() {
     const del = await cara.post("project-delete", { project_id: draft.id });
     const dash2 = await cara.get("/dashboard?tab=created");
     return dash.html.includes(title) && dash.html.includes("Draft — not launched") && del.location.includes("Draft deleted") && !dash2.html.includes("Throwaway");
+  });
+
+  section("French");
+  const MONTHS_FR = /\d{1,2} (janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre) \d{4}/;
+  const ENGLISH_UI = ["Back this project", "Discover more", "days to go", "Recommended for you", ">Log in<", "All or nothing", "Pledge without a reward"];
+  const leaks = (html) => ENGLISH_UI.filter((s) => html.includes(s));
+  await check("a French-speaking browser gets French by default", async () => {
+    const fr = new Actor("fr-browser");
+    fr.always["accept-language"] = "fr-FR,fr;q=0.9,en;q=0.5";
+    const h = await fr.get("/");
+    return h.html.includes('<html lang="fr"') && h.html.includes("Financez ce qui mérite") && h.html.includes("Recommandés pour vous") && leaks(h.html).length === 0;
+  });
+  await check("other browsers get English", async () => {
+    const de = new Actor("de-browser");
+    de.always["accept-language"] = "de-DE,de;q=0.9";
+    return (await de.get("/")).html.includes('<html lang="en"') && (await anon.get("/")).html.includes('<html lang="en"');
+  });
+  const pierre = new Actor("pierre");
+  await check("the language switch saves French and returns to the same page", async () => {
+    const r = await pierre.post("lang", { lang: "fr" }, { referer: `${BASE}/discover?category=games&notice=old` });
+    const d = await pierre.get(r.location);
+    return r.location === "/discover?category=games" && pierre.jar.get("cf_lang") === "fr" && d.html.includes('<html lang="fr"') && d.html.includes(">Jeux") && testid(d.html, "result-count") === "3 projets";
+  });
+  await check("French project page: labels, money, dates, time left", async () => {
+    const r = await pierre.get(`/projects/${LIVE}`);
+    return r.html.includes("Soutenir ce projet") && r.html.includes("Tout ou rien.") && r.html.includes("Contreparties") &&
+      /^\d{1,3}(\s\d{3})+\u00a0\$$/.test(testid(r.html, "pledged") ?? "") && /^\(\d+ %\)$/.test(testid(r.html, "percent") ?? "") &&
+      r.html.includes("jours restants") && MONTHS_FR.test(r.html) && leaks(r.html).length === 0;
+  });
+  await check("French on every main page", async () => {
+    const pages = { "/discover": "Découvrir", "/about": "Comment fonctionne Crownfunding", "/login": "Se connecter", "/signup": "S&#x27;inscrire", "/start": "Donnez vie à votre projet", "/no-such-page": "Nous n&#x27;avons pas trouvé cette page" };
+    for (const [path, text] of Object.entries(pages)) {
+      const r = await pierre.get(path);
+      if (!r.html.includes(text) || leaks(r.html).length) throw new Error(`${path} is not in French`);
+    }
+    return true;
+  });
+  await check("messages after actions are in French", async () => {
+    const s = await pierre.signup("Pierre Rapport");
+    const mend = await funding(pierre, "mend-a-visible-mending-kit");
+    const bad = await pierre.post("pledge", { project_id: mend.id, reward_id: mend.rewards[1], amount: 5 });
+    const ok = await pierre.post("pledge", { project_id: mend.id, reward_id: mend.rewards[1], amount: 42 });
+    const dash = await pierre.get("/dashboard");
+    return s.location.includes("Bienvenue sur Crownfunding, Pierre Rapport") && bad.location.includes("au moins 42") &&
+      ok.location.includes("Merci ! Vous avez promis 42") && dash.html.includes("Bonjour, Pierre Rapport") && dash.html.includes("Vous avez promis");
+  });
+  await check("switching back to English", async () => {
+    const r = await pierre.post("lang", { lang: "en" }, { referer: `${BASE}/projects/${LIVE}` });
+    const page = await pierre.get(r.location);
+    return r.location === `/projects/${LIVE}` && page.html.includes('<html lang="en"') && page.html.includes("Manage your pledge") === false && page.html.includes("Back this project");
+  });
+  await check("the switch ignores unknown languages and off-site return addresses", async () => {
+    const x = new Actor("x");
+    const a = await x.post("lang", { lang: "de" }, { referer: `${BASE}/about` });
+    const b = await x.post("lang", { lang: "fr" }, { referer: "https://evil.example/phish" });
+    return a.location === "/about" && !a.location.includes("de") && b.location === "/" && x.jar.get("cf_lang") === "fr";
   });
 
   section("Safety");

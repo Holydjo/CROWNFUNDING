@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { categoryBySlug } from "@/lib/categories";
-import { money, percent, shortTimeLeft } from "@/lib/format";
+import { percent } from "@/lib/format";
+import { getT } from "@/lib/i18n";
 import { projectState, type Project, type ProjectState } from "@/lib/queries";
 
 export type SP = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -29,13 +30,14 @@ export function Flash({ sp }: { sp: { [key: string]: string | string[] | undefin
 }
 
 /** Generated cover art, used when a project has no image of its own. */
-export function Cover({ project, className = "" }: { project: Pick<Project, "id" | "category" | "image_url" | "title">; className?: string }) {
+export async function Cover({ project, className = "" }: { project: Pick<Project, "id" | "category" | "image_url" | "title">; className?: string }) {
   if (project.image_url) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img src={project.image_url} alt={project.title} className={`h-full w-full object-cover ${className}`} />
     );
   }
+  const t = await getT();
   const cat = categoryBySlug(project.category);
   const h1 = (cat.hue + ((project.id * 11) % 36) - 18 + 360) % 360;
   const h2 = (h1 + 40 + (project.id % 5) * 12) % 360;
@@ -43,7 +45,7 @@ export function Cover({ project, className = "" }: { project: Pick<Project, "id"
   return (
     <div
       role="img"
-      aria-label={`${cat.name} project cover`}
+      aria-label={t.card.cover(t.category(cat.slug))}
       className={`relative h-full w-full overflow-hidden ${className}`}
       style={{ background: `linear-gradient(135deg, hsl(${h1} 62% 46%), hsl(${h2} 70% 30%))` }}
     >
@@ -59,30 +61,31 @@ export function Cover({ project, className = "" }: { project: Pick<Project, "id"
   );
 }
 
-export function Progress({ pledged, goal }: { pledged: number; goal: number }) {
+export async function Progress({ pledged, goal }: { pledged: number; goal: number }) {
+  const t = await getT();
   const pct = percent(pledged, goal);
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label={`${pct}% funded`}>
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label={t.card.progress(pct)}>
       <div className={`h-full rounded-full ${pct >= 100 ? "bg-good" : "bg-royal"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
     </div>
   );
 }
 
-export function StateBadge({ state }: { state: ProjectState }) {
-  const map: Record<ProjectState, [string, string]> = {
-    draft: ["Draft", "bg-crown-tint text-ink"],
-    live: ["Live", "bg-royal-tint text-royal"],
-    successful: ["Successfully funded", "bg-good/10 text-good"],
-    unsuccessful: ["Funding unsuccessful", "bg-bad/10 text-bad"],
+export async function StateBadge({ state }: { state: ProjectState }) {
+  const t = await getT();
+  const cls: Record<ProjectState, string> = {
+    draft: "bg-crown-tint text-ink",
+    live: "bg-royal-tint text-royal",
+    successful: "bg-good/10 text-good",
+    unsuccessful: "bg-bad/10 text-bad",
   };
-  const [label, cls] = map[state];
-  return <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${cls}`}>{label}</span>;
+  return <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${cls[state]}`}>{t.state[state]}</span>;
 }
 
-export function ProjectCard({ project, note }: { project: Project; note?: string }) {
+export async function ProjectCard({ project, note }: { project: Project; note?: string }) {
+  const t = await getT();
   const state = projectState(project);
   const pct = percent(project.pledged, project.goal);
-  const cat = categoryBySlug(project.category);
   const href = state === "draft" ? `/projects/${project.slug}/edit` : `/projects/${project.slug}`;
   return (
     <article className="group flex flex-col" data-testid="project-card">
@@ -99,19 +102,19 @@ export function ProjectCard({ project, note }: { project: Project; note?: string
       <p className="mt-1 text-sm text-ink-soft">
         {state === "live" ? (
           <>
-            {shortTimeLeft(project.deadline)} • <span className={pct >= 100 ? "font-semibold text-good" : ""}>{pct}% funded</span>
+            {t.shortTimeLeft(project.deadline)} • <span className={pct >= 100 ? "font-semibold text-good" : ""}>{t.card.pctFunded(pct)}</span>
           </>
         ) : state === "draft" ? (
-          "Draft — not launched"
+          t.card.draft
         ) : (
           <>
-            {state === "successful" ? "Funded" : "Ended"} • {pct}% of {money(project.goal)}
+            {state === "successful" ? t.card.funded : t.card.ended} • {t.card.pctOf(pct, t.money(project.goal))}
           </>
         )}
       </p>
       <p className="mt-2 line-clamp-2 text-sm text-ink-soft">{project.blurb}</p>
       <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
-        <Link href={`/discover?category=${cat.slug}`} className="rounded-full border border-line px-2 py-0.5 hover:border-royal hover:text-royal">{cat.name}</Link>
+        <Link href={`/discover?category=${project.category}`} className="rounded-full border border-line px-2 py-0.5 hover:border-royal hover:text-royal">{t.category(project.category)}</Link>
         {project.location && <span>{project.location}</span>}
         {note && <span className="rounded-full bg-crown-tint px-2 py-0.5 font-semibold text-ink">{note}</span>}
       </p>

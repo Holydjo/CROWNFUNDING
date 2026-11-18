@@ -29,6 +29,13 @@ Demo account: `demo@crownfunding.test` / `crown-demo-2026` (defined in `src/lib/
 | Backing | Pledge with or without a reward, change or cancel while live, sold-out limited rewards, all-or-nothing outcomes |
 | Accounts | Sign up, log in, log out, public profile, dashboard (backed / created / saved / settings) |
 | Creators | Draft, edit, add rewards, launch with a deadline, post updates, manage FAQ; goal locks at launch |
+| Languages | English and French. French browsers get French automatically; the 🌐 button in the header (or the footer picker) switches and remembers the choice |
+
+## Translations
+
+All interface text, messages, numbers, money and dates live in `src/lib/i18n.ts` (one `en` and one `fr`
+dictionary of the same shape; TypeScript flags any missing French string). Project content written by
+creators — titles, stories, rewards, comments — is shown as written, in whatever language the creator used.
 
 ## The remake report
 

@@ -1,6 +1,6 @@
 # Crownfunding remake report
 
-Run: 2026-11-16T04:12:16.985Z
+Run: 2026-11-18T02:23:18.928Z
 
 
 ## Home page (6/6)
@@ -98,6 +98,17 @@ Run: 2026-11-16T04:12:16.985Z
 - PASS  creator can comment on their own project and is labelled
 - PASS  creator dashboard lists created projects; draft can be deleted
 
+## French (8/8)
+
+- PASS  a French-speaking browser gets French by default
+- PASS  other browsers get English
+- PASS  the language switch saves French and returns to the same page
+- PASS  French project page: labels, money, dates, time left
+- PASS  French on every main page
+- PASS  messages after actions are in French
+- PASS  switching back to English
+- PASS  the switch ignores unknown languages and off-site return addresses
+
 ## Safety (5/5)
 
 - PASS  cross-site form posts are blocked
@@ -106,6 +117,6 @@ Run: 2026-11-16T04:12:16.985Z
 - PASS  search input is escaped and SQL-safe
 - PASS  unknown API actions return 404
 
-**76 of 76 checks passed.**
+**84 of 84 checks passed.**
 
 REMAKE COMPLETE
